@@ -7,7 +7,7 @@ import WelcomePage from "@/components/form/page1";
 import TeamSizePage from "@/components/form/page2";
 import TeamMembersPage from "@/components/form/page3";
 
-type TeamMember = {
+export type TeamMember = {
   isRepresentative: boolean; // 布林值: 是, 否（只能有一個為是）
   name: string; // 姓名
   gender: '男' | '女' | '其他'; // 性別選擇
@@ -22,19 +22,19 @@ type TeamMember = {
   remarks: string; // 備註
 };
 
-type EmergencyContact = {
+export type EmergencyContact = {
   name: string; // 姓名
   relationship: string; // 關係
   phone: string; // 電話
 };
 
-type AccompanyingPerson = {
+export type AccompanyingPerson = {
   name: string; // 姓名
   email: string; // Email
   phone: string; // 電話
 };
 
-type FormData = {
+export type FormData = {
   teamName: string; // 團隊名稱（2~30個字元，超出系統自動裁切）
   source: string; // 消息來源
   teamMembers: TeamMember[]; // 參賽團隊成員資料（陣列）

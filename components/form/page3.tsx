@@ -12,8 +12,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 
 const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
-  const { register, watch, setValue } = useFormContext(); // Remove 'control'
+  const { register, watch, setValue } = useFormContext();
+  const { fields: emergencyContacts, append: appendEmergencyContact, remove: removeEmergencyContact } = useFieldArray({
+    name: `teamMembers.${index}.emergencyContacts` // 管理緊急聯絡人的陣列
+  });
   const birthday = watch(`teamMembers.${index}.birthday`);
+
+  const addEmergencyContact = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault(); // 防止頁面跳轉
+    if (emergencyContacts.length < 4) { // 限制最多4位緊急聯絡人
+      appendEmergencyContact({ name: "", relationship: "", phone: "" });
+    }
+  };
 
   return (
     <div className="space-y-4 border p-4 rounded-md">
@@ -31,7 +41,7 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
 
       <RadioGroup
         defaultValue="男"
-        onValueChange={(value) => setValue(`teamMembers.${index}.gender`, value)} // 使用 setValue
+        onValueChange={(value) => setValue(`teamMembers.${index}.gender`, value)}
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="男" id={`male-${index}`} />
@@ -49,9 +59,7 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
 
       <Input {...register(`teamMembers.${index}.school`, { required: true })} placeholder="學校" />
 
-      <Select
-        onValueChange={(value) => setValue(`teamMembers.${index}.grade`, value)} // 使用 setValue
-      >
+      <Select onValueChange={(value) => setValue(`teamMembers.${index}.grade`, value)}>
         <SelectTrigger>
           <SelectValue placeholder="年級" />
         </SelectTrigger>
@@ -80,7 +88,7 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
           <Calendar
             mode="single"
             selected={birthday ? new Date(birthday) : undefined}
-            onSelect={(date) => setValue(`teamMembers.${index}.birthday`, date?.toISOString())} // 使用 setValue
+            onSelect={(date) => setValue(`teamMembers.${index}.birthday`, date?.toISOString())}
             initialFocus
           />
         </PopoverContent>
@@ -109,13 +117,36 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
       {/* 緊急聯絡人 */}
       <div className="space-y-2">
         <h4 className="font-semibold">緊急聯絡人</h4>
-        <Input {...register(`teamMembers.${index}.emergencyContact.name`, { required: true })} placeholder="姓名" />
-        <Input {...register(`teamMembers.${index}.emergencyContact.relationship`, { required: true })} placeholder="關係" />
-        <Input {...register(`teamMembers.${index}.emergencyContact.phone`, { required: true })} placeholder="電話" />
+        {emergencyContacts.map((contact, contactIndex) => (
+          <div key={contactIndex} className="space-y-2">
+            <Label>{`緊急聯絡人 ${contactIndex + 1}`}</Label> {/* 添加編號 */}
+            <Input 
+              {...register(`teamMembers.${index}.emergencyContacts.${contactIndex}.name`, { required: true })} 
+              placeholder="姓名" 
+            />
+            <Input 
+              {...register(`teamMembers.${index}.emergencyContacts.${contactIndex}.relationship`, { required: true })} 
+              placeholder="關係" 
+            />
+            <Input 
+              {...register(`teamMembers.${index}.emergencyContacts.${contactIndex}.phone`, { required: true })} 
+              placeholder="電話" 
+            />
+            {contactIndex > 0 && (
+              <Button onClick={() => removeEmergencyContact(contactIndex)} variant="destructive">
+                刪除
+              </Button>
+            )}
+          </div>
+        ))}
+        {emergencyContacts.length < 4 && (
+          <Button onClick={addEmergencyContact} variant="outline">添加緊急聯絡人</Button>
+        )}
       </div>
     </div>
   );
 };
+
 
 const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNext, onPrev }) => {
   const { control, watch } = useFormContext();
@@ -125,7 +156,6 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNex
   });
   const teamSize = parseInt(watch("teamSize"), 10); // 確保 teamSize 是數字
   const isInitialRender = useRef(true);
-
 
   // 自動添加成員
   useEffect(() => {
@@ -151,7 +181,7 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNex
             allergies: "",
             specialDiseases: "",
             remarks: "",
-            emergencyContact: { name: "", relationship: "", phone: "" }
+            emergencyContacts: [{ name: "", relationship: "", phone: "" }] // 初始化一位緊急聯絡人
           });
         }
       }
