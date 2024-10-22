@@ -1,65 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, SubmitHandler, FormProvider } from "react-hook-form"; // 引入 react-hook-form
-import { Button } from "@/components/ui/button";  
+import { useForm, SubmitHandler, FormProvider } from "react-hook-form";
+import { z } from "zod"; // 引入 zod
+import { zodResolver } from "@hookform/resolvers/zod"; // 用來解決 zod 與 react-hook-form 之間的整合
+import { Button } from "@/components/ui/button";
 import WelcomePage from "@/components/form/page1";
 import TeamSizePage from "@/components/form/page2";
 import TeamMembersPage from "@/components/form/page3";
 
-export type TeamMember = {
-  isRepresentative: boolean; // 布林值: 是, 否（只能有一個為是）
-  name: string; // 姓名
-  gender: '男' | '女' | '其他'; // 性別選擇
-  school: string; // 學校
-  grade: '一' | '二' | '三'; // 高幾（包含大專）
-  identityNumber: string; // 身份字號
-  birthday: string; // 生日（可使用日曆選單或格式輸入）
-  email: string; // email（包含格式檢查）
-  phone: string; // 手機（10碼）
-  allergies: string; // 過敏原 / 素食選擇
-  specialDiseases: string; // 特殊疾病
-  remarks: string; // 備註
-};
+// 使用 zod 來定義表單的 schema
 
-export type EmergencyContact = {
-  name: string; // 姓名
-  relationship: string; // 關係
-  phone: string; // 電話
-};
+export const emergencyContactSchema = z.object({
+  name: z.string().min(1, "緊急聯絡人姓名必填"),
+  relationship: z.string().min(1, "關係必填"),
+  phone: z
+    .string()
+    .min(10, "電話號碼必須為 10 碼")
+    .max(10, "電話號碼必須為 10 碼"),
+});
 
-export type AccompanyingPerson = {
-  name: string; // 姓名
-  email: string; // Email
-  phone: string; // 電話
-};
+export const accompanyingPersonSchema = z.object({
+  name: z.string().min(1, "姓名必填"),
+  email: z.string().email("Email 格式不正確"),
+  phone: z
+    .string()
+    .min(10, "電話號碼必須為 10 碼")
+    .max(10, "電話號碼必須為 10 碼"),
+});
 
-export type FormData = {
-  teamName: string; // 團隊名稱（2~30個字元，超出系統自動裁切）
-  source: string; // 消息來源
-  teamMembers: TeamMember[]; // 參賽團隊成員資料（陣列）
-  emergencyContacts: EmergencyContact[]; // 緊急聯絡人（最少1個，可+/-）
-  mediaAuthorization: boolean; // 媒體授權
-  copyrightAgreement: boolean; // 無侵權切結書
-  parentalConsent: boolean; // 家長同意書
-  accompanyingPersons: AccompanyingPerson[]; // 陪伴人（最多2個）
-  exhibitors: string[]; // 參展人（系統自動帶入陪伴人，但不歸類於參展人，無限制）
-};
+export const teamMemberSchema = z.object({
+  isRepresentative: z.boolean(),
+  name: z.string().min(1, "姓名必填"),
+  gender: z.enum(["男", "女", "其他"]),
+  school: z.string().min(1, "學校必填"),
+  grade: z.enum(["一", "二", "三"]),
+  identityNumber: z.string().length(10, "身份字號必須為 10 碼"),
+  birthday: z.string().min(1, "生日必填"),
+  email: z.string().email("Email 格式不正確"),
+  phone: z.string().length(10, "手機號碼必須為 10 碼"),
+  emergencyContacts: z
+    .array(emergencyContactSchema)
+    .min(1, "至少需要一位緊急聯絡人"),
+  allergies: z.string().optional(),
+  specialDiseases: z.string().optional(),
+  remarks: z.string().optional(),
+});
+
+export const formSchema = z.object({
+  teamName: z
+    .string()
+    .min(2, "團隊名稱至少 2 個字")
+    .max(30, "團隊名稱最多 30 個字"),
+  teamMembers: z.array(teamMemberSchema).min(1, "至少需要一位團隊成員"),
+  accompanyingPersons: z
+    .array(accompanyingPersonSchema)
+    .max(2, "最多 2 位陪伴人"),
+  exhibitors: z.array(z.string()).optional(),
+});
+
+// 使用 zod 的驗證類型
+export type FormData = z.infer<typeof formSchema>;
 
 const StepForm: React.FC = () => {
   const [step, setStep] = useState(1);
-  // 初始化 react-hook-form
   const methods = useForm<FormData>({
+    resolver: zodResolver(formSchema), // 使用 zod 驗證
     defaultValues: {
-      teamName: "", 
-      source: "", 
-      teamMembers: [], 
-      emergencyContacts: [], 
-      mediaAuthorization: false,
-      copyrightAgreement: false,
-      parentalConsent: false,
-      accompanyingPersons: [], 
-      exhibitors: [], 
+      teamName: "",
+      teamMembers: [],
+      accompanyingPersons: [],
+      exhibitors: [],
     },
   });
 
@@ -83,17 +94,9 @@ const StepForm: React.FC = () => {
       >
         <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
           {step === 1 && <WelcomePage onNext={nextStep} />}
-          {step === 2 && (
-            <TeamSizePage
-              onNext={nextStep}
-              onPrev={prevStep}
-            />
-          )}
+          {step === 2 && <TeamSizePage onNext={nextStep} onPrev={prevStep} />}
           {step === 3 && (
-            <TeamMembersPage
-              onNext={nextStep}
-              onPrev={prevStep}
-            />
+            <TeamMembersPage onNext={nextStep} onPrev={prevStep} />
           )}
           {step === 4 && (
             <div className="text-center">

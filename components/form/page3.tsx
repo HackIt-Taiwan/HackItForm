@@ -2,46 +2,73 @@ import { FC, useEffect, useRef } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 
+// Form component for each team member
 const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
-  const { register, watch, setValue } = useFormContext();
-  const { fields: emergencyContacts, append: appendEmergencyContact, remove: removeEmergencyContact } = useFieldArray({
-    name: `teamMembers.${index}.emergencyContacts` // 管理緊急聯絡人的陣列
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
+  const {
+    fields: emergencyContacts,
+    append: appendEmergencyContact,
+    remove: removeEmergencyContact,
+  } = useFieldArray({
+    name: `teamMembers.${index}.emergencyContacts`,
   });
   const birthday = watch(`teamMembers.${index}.birthday`);
 
   const addEmergencyContact = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault(); // 防止頁面跳轉
-    if (emergencyContacts.length < 4) { // 限制最多4位緊急聯絡人
+    event.preventDefault();
+    if (emergencyContacts.length < 2) {
       appendEmergencyContact({ name: "", relationship: "", phone: "" });
     }
   };
 
   return (
     <div className="space-y-4 border p-4 rounded-md">
-      <h3 className="text-lg font-semibold">團隊成員 {index + 1}</h3>
-      
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id={`representative-${index}`}
-          {...register(`teamMembers.${index}.isRepresentative`)}
-        />
-        <Label htmlFor={`representative-${index}`}>是否為代表人</Label>
-      </div>
+      <h3 className="text-lg font-semibold">
+        {index === 0 ? " 隊長/團隊代表人" : "團隊成員" + index}
+      </h3>
 
-      <Input {...register(`teamMembers.${index}.name`, { required: true })} placeholder="姓名" />
+      {/* Name input with error message */}
+      <Input
+        {...register(`teamMembers.${index}.name`, {
+          required: "姓名是必填欄位",
+        })}
+        placeholder="姓名"
+        aria-invalid={errors?.teamMembers?.[index]?.name ? "true" : "false"}
+      />
+      {errors?.teamMembers?.[index]?.name && (
+        <p className="text-red-600">{errors.teamMembers[index].name.message}</p>
+      )}
 
+      {/* Radio Group for Gender */}
       <RadioGroup
         defaultValue="男"
-        onValueChange={(value) => setValue(`teamMembers.${index}.gender`, value)}
+        onValueChange={(value) =>
+          setValue(`teamMembers.${index}.gender`, value)
+        }
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="男" id={`male-${index}`} />
@@ -57,104 +84,232 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
         </div>
       </RadioGroup>
 
-      <Input {...register(`teamMembers.${index}.school`, { required: true })} placeholder="學校" />
+      {/* School input with error message */}
+      <Input
+        {...register(`teamMembers.${index}.school`, {
+          required: "學校是必填欄位",
+        })}
+        placeholder="學校"
+        aria-invalid={errors?.teamMembers?.[index]?.school ? "true" : "false"}
+      />
+      {errors?.teamMembers?.[index]?.school && (
+        <p className="text-red-600">
+          {errors.teamMembers[index].school.message}
+        </p>
+      )}
 
-      <Select onValueChange={(value) => setValue(`teamMembers.${index}.grade`, value)}>
-        <SelectTrigger>
-          <SelectValue placeholder="年級" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="一">一</SelectItem>
-          <SelectItem value="二">二</SelectItem>
-          <SelectItem value="三">三</SelectItem>
-        </SelectContent>
-      </Select>
+      {/* Radio Group for Grade */}
+      <RadioGroup
+        defaultValue="一"
+        onValueChange={(value) => setValue(`teamMembers.${index}.grade`, value)}
+      >
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="一" id={`grade-one-${index}`} />
+          <Label htmlFor={`grade-one-${index}`}>高中職一</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="二" id={`grade-two-${index}`} />
+          <Label htmlFor={`grade-two-${index}`}>高中職二</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="三" id={`grade-three-${index}`} />
+          <Label htmlFor={`grade-three-${index}`}>高中職三</Label>
+        </div>
+      </RadioGroup>
+      {errors?.teamMembers?.[index]?.grade && (
+        <p className="text-red-600">
+          {errors.teamMembers[index].grade.message}
+        </p>
+      )}
 
-      <Input 
-        {...register(`teamMembers.${index}.identityNumber`, { 
-          required: true,
-          minLength: { value: 10, message: "身份字號至少需要10個字元" }
-        })} 
-        placeholder="身份字號" 
+      {/* Identity Number with error message */}
+      <Input
+        {...register(`teamMembers.${index}.identityNumber`, {
+          required: "身份字號是必填欄位",
+          minLength: { value: 10, message: "身份字號至少需要10個字元" },
+        })}
+        placeholder="身份字號"
+        aria-invalid={
+          errors?.teamMembers?.[index]?.identityNumber ? "true" : "false"
+        }
+      />
+      {errors?.teamMembers?.[index]?.identityNumber && (
+        <p className="text-red-600">
+          {errors.teamMembers[index].identityNumber.message}
+        </p>
+      )}
+
+      {/* 生日输入框及错误信息 */}
+      <Input
+        type="date" // 设置输入框为日期类型
+        {...register(`teamMembers.${index}.birthday`, {
+          required: "生日是必填欄位",
+        })}
+        placeholder="生日格式為 yyyy/mm/dd (年/月/日)"
+        aria-invalid={errors?.teamMembers?.[index]?.birthday ? "true" : "false"}
+      />
+      {errors?.teamMembers?.[index]?.birthday && (
+        <p className="text-red-600">
+          {errors.teamMembers[index].birthday.message}
+        </p>
+      )}
+
+      {/* Email with error message */}
+      <Input
+        {...register(`teamMembers.${index}.email`, {
+          required: "Email 是必填欄位",
+          pattern: { value: /^\S+@\S+$/i, message: "請輸入有效的電子郵件地址" },
+        })}
+        placeholder="Email"
+        aria-invalid={errors?.teamMembers?.[index]?.email ? "true" : "false"}
+      />
+      {errors?.teamMembers?.[index]?.email && (
+        <p className="text-red-600">
+          {errors.teamMembers[index].email.message}
+        </p>
+      )}
+
+      {/* Phone with error message */}
+      <Input
+        {...register(`teamMembers.${index}.phone`, {
+          required: "手機是必填欄位",
+          pattern: { value: /^\d{10}$/, message: "請輸入10位數字的手機號碼" },
+        })}
+        placeholder="手機"
+        aria-invalid={errors?.teamMembers?.[index]?.phone ? "true" : "false"}
+      />
+      {errors?.teamMembers?.[index]?.phone && (
+        <p className="text-red-600">
+          {errors.teamMembers[index].phone.message}
+        </p>
+      )}
+
+      {/* Additional fields */}
+      <Input
+        {...register(`teamMembers.${index}.allergies`)}
+        placeholder="過敏原 / 素食選擇"
+      />
+      <Input
+        {...register(`teamMembers.${index}.specialDiseases`)}
+        placeholder="特殊疾病"
+      />
+      <Textarea
+        {...register(`teamMembers.${index}.remarks`)}
+        placeholder="備註"
       />
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline">
-            {birthday ? format(new Date(birthday), 'PP') : '選擇生日'}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
-          <Calendar
-            mode="single"
-            selected={birthday ? new Date(birthday) : undefined}
-            onSelect={(date) => setValue(`teamMembers.${index}.birthday`, date?.toISOString())}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-
-      <Input 
-        {...register(`teamMembers.${index}.email`, { 
-          required: true,
-          pattern: { value: /^\S+@\S+$/i, message: "請輸入有效的電子郵件地址" }
-        })} 
-        placeholder="Email" 
-      />
-
-      <Input 
-        {...register(`teamMembers.${index}.phone`, { 
-          required: true,
-          pattern: { value: /^\d{10}$/, message: "請輸入10位數字的手機號碼" }
-        })} 
-        placeholder="手機" 
-      />
-
-      <Input {...register(`teamMembers.${index}.allergies`)} placeholder="過敏原 / 素食選擇" />
-      <Input {...register(`teamMembers.${index}.specialDiseases`)} placeholder="特殊疾病" />
-      <Textarea {...register(`teamMembers.${index}.remarks`)} placeholder="備註" />
-
-      {/* 緊急聯絡人 */}
+      {/* Emergency Contacts */}
       <div className="space-y-2">
         <h4 className="font-semibold">緊急聯絡人</h4>
         {emergencyContacts.map((contact, contactIndex) => (
           <div key={contactIndex} className="space-y-2">
-            <Label>{`緊急聯絡人 ${contactIndex + 1}`}</Label> {/* 添加編號 */}
-            <Input 
-              {...register(`teamMembers.${index}.emergencyContacts.${contactIndex}.name`, { required: true })} 
-              placeholder="姓名" 
+            <Label>{`緊急聯絡人 ${contactIndex + 1}`}</Label>
+            <Input
+              {...register(
+                `teamMembers.${index}.emergencyContacts.${contactIndex}.name`,
+                { required: "姓名是必填欄位" }
+              )}
+              placeholder="姓名"
+              aria-invalid={
+                errors?.teamMembers?.[index]?.emergencyContacts?.[contactIndex]
+                  ?.name
+                  ? "true"
+                  : "false"
+              }
             />
-            <Input 
-              {...register(`teamMembers.${index}.emergencyContacts.${contactIndex}.relationship`, { required: true })} 
-              placeholder="關係" 
+            {errors?.teamMembers?.[index]?.emergencyContacts?.[contactIndex]
+              ?.name && (
+              <p className="text-red-600">
+                {
+                  errors.teamMembers[index].emergencyContacts[contactIndex].name
+                    .message
+                }
+              </p>
+            )}
+            <Input
+              {...register(
+                `teamMembers.${index}.emergencyContacts.${contactIndex}.relationship`,
+                { required: "關係是必填欄位" }
+              )}
+              placeholder="關係"
+              aria-invalid={
+                errors?.teamMembers?.[index]?.emergencyContacts?.[contactIndex]
+                  ?.relationship
+                  ? "true"
+                  : "false"
+              }
             />
-            <Input 
-              {...register(`teamMembers.${index}.emergencyContacts.${contactIndex}.phone`, { required: true })} 
-              placeholder="電話" 
+            {errors?.teamMembers?.[index]?.emergencyContacts?.[contactIndex]
+              ?.relationship && (
+              <p className="text-red-600">
+                {
+                  errors.teamMembers[index].emergencyContacts[contactIndex]
+                    .relationship.message
+                }
+              </p>
+            )}
+            <Input
+              {...register(
+                `teamMembers.${index}.emergencyContacts.${contactIndex}.phone`,
+                {
+                  required: "電話是必填欄位",
+                  pattern: {
+                    value: /^\d{10}$/,
+                    message: "請輸入10位數字的電話號碼",
+                  },
+                }
+              )}
+              placeholder="電話"
+              aria-invalid={
+                errors?.teamMembers?.[index]?.emergencyContacts?.[contactIndex]
+                  ?.phone
+                  ? "true"
+                  : "false"
+              }
             />
-            {contactIndex > 0 && (
-              <Button onClick={() => removeEmergencyContact(contactIndex)} variant="destructive">
-                刪除
+            {errors?.teamMembers?.[index]?.emergencyContacts?.[contactIndex]
+              ?.phone && (
+              <p className="text-red-600">
+                {
+                  errors.teamMembers[index].emergencyContacts[contactIndex]
+                    .phone.message
+                }
+              </p>
+            )}
+
+            {emergencyContacts.length > 1 && (
+              <Button
+                variant="destructive"
+                onClick={() => removeEmergencyContact(contactIndex)}
+              >
+                移除聯絡人
               </Button>
             )}
           </div>
         ))}
-        {emergencyContacts.length < 4 && (
-          <Button onClick={addEmergencyContact} variant="outline">添加緊急聯絡人</Button>
-        )}
+        {/* 新增緊急聯絡人按鈕 */}
+        <Button
+          onClick={addEmergencyContact}
+          variant="outline"
+          disabled={emergencyContacts.length >= 2} // 禁用條件
+        >
+          新增緊急聯絡人
+        </Button>
       </div>
     </div>
   );
 };
 
-
-const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNext, onPrev }) => {
-  const { control, watch } = useFormContext();
+const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({
+  onNext,
+  onPrev,
+}) => {
+  const { control, watch, handleSubmit } = useFormContext();
   const { fields, append } = useFieldArray({
     control,
-    name: "teamMembers"
+    name: "teamMembers",
   });
-  const teamSize = parseInt(watch("teamSize"), 10); // 確保 teamSize 是數字
+  const teamSize = parseInt(watch("teamSize"), 10);
   const isInitialRender = useRef(true);
 
   // 自動添加成員
@@ -164,7 +319,7 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNex
       return;
     }
 
-    if (!isNaN(teamSize)) { // 確保 teamSize 是有效數字
+    if (!isNaN(teamSize)) {
       const diff = teamSize - fields.length;
       if (diff > 0) {
         for (let i = 0; i < diff; i++) {
@@ -181,12 +336,18 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNex
             allergies: "",
             specialDiseases: "",
             remarks: "",
-            emergencyContacts: [{ name: "", relationship: "", phone: "" }] // 初始化一位緊急聯絡人
+            emergencyContacts: [{ name: "", relationship: "", phone: "" }],
           });
         }
       }
     }
   }, [teamSize, fields.length, append]);
+
+  // 提交處理邏輯
+  const onSubmit = (data: FormData) => {
+    console.log(data); // 這裡會輸出表單的數據
+    onNext(); // 驗證通過後進行下一步
+  };
 
   return (
     <div className="space-y-6">
@@ -196,7 +357,8 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({ onNex
       ))}
       <div className="flex justify-between">
         <Button onClick={onPrev}>上一步</Button>
-        <Button onClick={onNext}>下一步</Button>
+        {/* 使用 handleSubmit 包裹 onSubmit 函數 */}
+        <Button onClick={handleSubmit(onSubmit)}>下一步</Button>
       </div>
     </div>
   );

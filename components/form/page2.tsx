@@ -30,6 +30,7 @@ const TeamSizePage: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext,
         </SelectTrigger>
         <SelectContent>
           {/* 使用 Select.Item 來顯示選項 */}
+          <SelectItem value="1">1 人</SelectItem>
           <SelectItem value="3">3 人</SelectItem>
           <SelectItem value="4">4 人</SelectItem>
           <SelectItem value="5">5 人</SelectItem>
