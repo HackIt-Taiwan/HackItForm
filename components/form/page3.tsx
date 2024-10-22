@@ -349,6 +349,11 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({
     onNext(); // 驗證通過後進行下一步
   };
 
+  const onSubmitUp = (data: FormData) => {
+    console.log(data); // 這裡會輸出表單的數據
+    onPrev(); // 驗證通過後進行下一步
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">參賽團隊成員資料</h2>
@@ -356,7 +361,7 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({
         <TeamMemberForm key={field.id} index={index} />
       ))}
       <div className="flex justify-between">
-        <Button onClick={onPrev}>上一步</Button>
+        <Button onClick={handleSubmit(onSubmitUp)}>上一步</Button>
         {/* 使用 handleSubmit 包裹 onSubmit 函數 */}
         <Button onClick={handleSubmit(onSubmit)}>下一步</Button>
       </div>
