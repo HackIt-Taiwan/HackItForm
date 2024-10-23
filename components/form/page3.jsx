@@ -88,6 +88,9 @@ const TeamMemberForm = ({ index }) => {
           <Label htmlFor={`other-${index}`}>其他</Label>
         </div>
       </RadioGroup>
+      {errors?.teamMembers?.[index]?.gender && (
+        <p className="text-red-600">性別是必填欄位</p>
+      )}
 
       {/* School input with error message */}
       <Input
@@ -126,7 +129,7 @@ const TeamMemberForm = ({ index }) => {
       </RadioGroup>
       {errors?.teamMembers?.[index]?.grade && (
         <p className="text-red-600">
-          {errors.teamMembers[index].grade.message}
+          年級是必填欄位
         </p>
       )}
 
@@ -345,24 +348,19 @@ const TeamMemberForm = ({ index }) => {
 };
 
 const TeamMembersPage = ({ onNext, onPrev }) => {
-  const { control, watch, handleSubmit, getValues } = useFormContext();
+  const { control, handleSubmit, getValues } = useFormContext();
   const { fields, append } = useFieldArray({
     control,
     name: "teamMembers",
   });
-  const teamSize = parseInt(watch("teamSize"), 10);
   const isInitialRender = useRef(true);
 
   // 自動添加成員
   useEffect(() => {
-    const currentTeamSize = watch("teamSize");
     if (isInitialRender.current) {
       isInitialRender.current = false;
-      return;
-    }
-
-    if (!isNaN(currentTeamSize)) {
-      const diff = currentTeamSize - fields.length;
+      const initialMembersCount = parseInt(getValues("teamSize"), 10); // 使用 getValues 獲取 teamSize 的值
+      const diff = initialMembersCount - fields.length;
       if (diff > 0) {
         for (let i = 0; i < diff; i++) {
           append({
@@ -383,7 +381,7 @@ const TeamMembersPage = ({ onNext, onPrev }) => {
         }
       }
     }
-  }, [watch("teamSize"), fields.length, append]);
+  }, [fields.length, append]);
 
   // 提交處理邏輯
   const onSubmit = (data) => {
