@@ -2,30 +2,14 @@ import { FC, useEffect, useRef } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
+import { Label } from "@/components/ui/label";
 
 // Form component for each team member
 const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
   const {
     register,
-    watch,
     setValue,
     formState: { errors },
   } = useFormContext();
@@ -36,7 +20,6 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
   } = useFieldArray({
     name: `teamMembers.${index}.emergencyContacts`,
   });
-  const birthday = watch(`teamMembers.${index}.birthday`);
 
   const addEmergencyContact = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
