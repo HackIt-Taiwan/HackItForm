@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, SubmitHandler, FormProvider } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { z } from "zod"; // 引入 zod
 import { zodResolver } from "@hookform/resolvers/zod"; // 用來解決 zod 與 react-hook-form 之間的整合
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import ExhibitorsPage from "@/components/form/page5";
 import { API_END_POINT } from "@/lib/variable";
 import { ClipLoader } from "react-spinners";
 
-export const emergencyContactSchema = z.object({
+const emergencyContactSchema = z.object({
   name: z.string().min(1, "緊急聯絡人姓名必填"),
   relationship: z.string().min(1, "關係必填"),
   phone: z
@@ -22,7 +22,7 @@ export const emergencyContactSchema = z.object({
     .refine((val) => val.startsWith("09"), "電話號碼必須以 09 開頭"),
 });
 
-export const accompanyingPersonSchema = z.object({
+const accompanyingPersonSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "姓名必填"),
   email: z.string().email("Email 格式不正確"),
@@ -32,8 +32,7 @@ export const accompanyingPersonSchema = z.object({
     .refine((val) => val.startsWith("09"), "電話號碼必須以 09 開頭"),
 });
 
-export const teamMemberSchema = z.object({
-  isRepresentative: z.boolean(),
+const teamMemberSchema = z.object({
   name: z.string().min(1, "姓名必填"),
   gender: z.enum(["男", "女", "其他"]),
   school: z.string().min(1, "學校必填"),
@@ -51,15 +50,16 @@ export const teamMemberSchema = z.object({
   allergies: z.string().optional(),
   specialDiseases: z.string().optional(),
   remarks: z.string().optional(),
+  tShirtSize: z.enum(["S", "M", "L", "XL", "2L", "3L", "4L"]),
 });
 
-export const exhibitorSchema = z.object({
+const exhibitorSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "姓名必填"),
   email: z.string().min(1, "Email 必填").email("Email 格式不正確"), // 確保 email 格式正確
 });
 
-export const formSchema = z.object({
+const formSchema = z.object({
   teamName: z
     .string()
     .min(2, "團隊名稱至少 2 個字")
@@ -75,14 +75,13 @@ export const formSchema = z.object({
 });
 
 // 使用 zod 的驗證類型
-export type FormData = z.infer<typeof formSchema>;
-const StepForm: React.FC = () => {
+const StepForm = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
-  const methods = useForm<FormData>({
+  const methods = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       teamName: "",
@@ -95,7 +94,7 @@ const StepForm: React.FC = () => {
   const nextStep = () => setStep((prevStep) => prevStep + 1);
   const prevStep = () => setStep((prevStep) => prevStep - 1);
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const onSubmit = async (data) => {
     setLoading(true);
     setSubmitSuccess(false);
     setSubmitError(false);
@@ -173,6 +172,5 @@ const StepForm: React.FC = () => {
     </FormProvider>
   );
 };
-
 
 export default StepForm;

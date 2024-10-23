@@ -1,7 +1,7 @@
 // components/WelcomePage.js
 import { Button } from "@/components/ui/button";
 
-const WelcomePage = ({ onNext }: { onNext: () => void }) => {
+const WelcomePage = ({ onNext }) => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4 text-center">歡迎參加 HackIT！</h1>

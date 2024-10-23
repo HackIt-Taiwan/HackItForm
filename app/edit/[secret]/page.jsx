@@ -15,7 +15,7 @@ import { useParams } from "next/navigation"; // 使用 useRouter 來取得 [id]
 import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 
 // Zod schema 定義
-export const emergencyContactSchema = z.object({
+ const emergencyContactSchema = z.object({
   name: z.string().min(1, "緊急聯絡人姓名必填"),
   relationship: z.string().min(1, "關係必填"),
   phone: z
@@ -24,7 +24,7 @@ export const emergencyContactSchema = z.object({
     .refine((val) => val.startsWith("09"), "電話號碼必須以 09 開頭"),
 });
 
-export const accompanyingPersonSchema = z.object({
+ const accompanyingPersonSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "姓名必填"),
   email: z.string().email("Email 格式不正確"),
@@ -34,7 +34,7 @@ export const accompanyingPersonSchema = z.object({
     .refine((val) => val.startsWith("09"), "電話號碼必須以 09 開頭"),
 });
 
-export const teamMemberSchema = z.object({
+ const teamMemberSchema = z.object({
   name: z.string().min(1, "姓名必填"),
   gender: z.enum(["男", "女", "其他"]),
   school: z.string().min(1, "學校必填"),
@@ -52,15 +52,16 @@ export const teamMemberSchema = z.object({
   allergies: z.string().optional(),
   specialDiseases: z.string().optional(),
   remarks: z.string().optional(),
+  tShirtSize: z.enum(["S", "M", "L", "XL", "2L", "3L", "4L"]),
 });
 
-export const exhibitorSchema = z.object({
+ const exhibitorSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "姓名必填"),
   email: z.string().min(1, "Email 必填").email("Email 格式不正確"), // 確保 email 格式正確
 });
 
-export const formSchema = z.object({
+ const formSchema = z.object({
   teamName: z
     .string()
     .min(2, "團隊名稱至少 2 個字")
@@ -76,8 +77,7 @@ export const formSchema = z.object({
 });
 
 // 使用 zod 的驗證類型
-export type FormData = z.infer<typeof formSchema>;
-const StepForm: React.FC = () => {
+const StepForm = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -85,9 +85,9 @@ const StepForm: React.FC = () => {
   const [submitError, setSubmitError] = useState(false); // 控制提交錯誤提示
   const [showButtons, setShowButtons] = useState(true); // 控制按鈕的顯示
 
-  const params = useParams<{ secret: string }>();
+  const params = useParams();
 
-  const methods = useForm<FormData>({
+  const methods = useForm({
     resolver: zodResolver(formSchema), // 使用 zod 驗證
     defaultValues: {
       teamName: "",
@@ -119,7 +119,6 @@ const StepForm: React.FC = () => {
           if (!data.exhibitors) {
             methods.setValue("exhibitors", []);
           }
-          console.log(methods.getValues());
         } catch (error) {
           console.error("Error fetching form data:", error);
           setNotFound(true);
@@ -142,7 +141,7 @@ const StepForm: React.FC = () => {
     setStep((prevStep) => prevStep - 1);
   };
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const onSubmit = async (data) => {
     setLoading(true); // 開始loading
     setSubmitSuccess(false); // 清除之前的成功提示
     setSubmitError(false); // 清除之前的錯誤提示

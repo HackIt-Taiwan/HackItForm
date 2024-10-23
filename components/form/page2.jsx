@@ -1,15 +1,14 @@
-import { FC } from "react";
 import { useFormContext } from "react-hook-form"; // 用於獲取表單上下文
 import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from "@/components/ui/select"; // 引入 Shadcn 的 Select 元件
 import { Button } from "@/components/ui/button"; // 引入 Shadcn 的 Button 元件
 import { Input } from "@/components/ui/input"; // 引入 Shadcn 的 Input 元件
 
-const TeamSizePageForUpdate: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext, onPrev }) => {
+const TeamSizePage = ({ onNext, onPrev }) => {
   const { register, setValue, watch, formState: { errors } } = useFormContext(); // 獲取表單控制方法和錯誤狀態
   const teamSize = watch("teamSize");
   const teamName = watch("teamName");
 
-  const handleTeamSizeChange = (value: string) => {
+  const handleTeamSizeChange = (value) => {
     setValue("teamSize", value); // 將選擇的團隊人數設置到表單中
   };
 
@@ -28,7 +27,6 @@ const TeamSizePageForUpdate: FC<{ onNext: () => void; onPrev: () => void; }> = (
         {...register("teamSize", { required: "請選擇參賽團隊人數" })} // 註冊到 react-hook-form
         onValueChange={handleTeamSizeChange} // 當選擇時更新表單
         defaultValue={teamSize}
-        disabled={true}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="團隊人數" />
@@ -64,4 +62,4 @@ const TeamSizePageForUpdate: FC<{ onNext: () => void; onPrev: () => void; }> = (
   );
 };
 
-export default TeamSizePageForUpdate;
+export default TeamSizePage;

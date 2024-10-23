@@ -1,9 +1,9 @@
-import { FC, useEffect } from "react";
+import { useEffect } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // Shadcn 的 Input 元件
 
-const ExhibitorsPage: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext, onPrev }) => {
+const ExhibitorsPage = ({ onNext, onPrev }) => {
   const { register, control, formState: { errors, isValid }, trigger } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,

@@ -11,7 +11,7 @@ const VerificationSuccess = () => {
         </CardHeader>
         <CardContent>
           <p className="text-center text-gray-700">
-            已經寄相關文件至您的信箱，完成簽名後即完成報名！
+            等待全隊成員完成驗證後，報名的驗證就會完成，請關注email信箱，更進一步的通知將會使用email信箱通知！
           </p>
         </CardContent>
       </Card>

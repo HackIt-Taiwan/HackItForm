@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 // Form component for each team member
-const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
+const TeamMemberForm = ({ index }) => {
   const {
     register,
     setValue,
+    getValues,
     formState: { errors },
   } = useFormContext();
   const {
@@ -21,12 +22,32 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
     name: `teamMembers.${index}.emergencyContacts`,
   });
 
-  const addEmergencyContact = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const addEmergencyContact = (event) => {
     event.preventDefault();
     if (emergencyContacts.length < 2) {
       appendEmergencyContact({ name: "", relationship: "", phone: "" });
     }
   };
+
+  const [tShirtSize, setTShirtSize] = useState(
+    getValues(`teamMembers.${index}.tShirtSize`)
+  );
+  const [grade, setGrade] = useState(getValues(`teamMembers.${index}.grade`));
+  const [gender, setGender] = useState(
+    getValues(`teamMembers.${index}.gender`)
+  );
+
+  useEffect(() => {
+    setTShirtSize(getValues(`teamMembers.${index}.tShirtSize`));
+  }, [getValues(`teamMembers.${index}.tShirtSize`)]);
+
+  useEffect(() => {
+    setGrade(getValues(`teamMembers.${index}.grade`));
+  }, [getValues(`teamMembers.${index}.grade`)]);
+
+  useEffect(() => {
+    setGender(getValues(`teamMembers.${index}.gender`));
+  }, [getValues(`teamMembers.${index}.gender`)]);
 
   return (
     <div className="space-y-4 border p-4 rounded-md">
@@ -48,10 +69,11 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
 
       {/* Radio Group for Gender */}
       <RadioGroup
-        defaultValue="男"
-        onValueChange={(value) =>
-          setValue(`teamMembers.${index}.gender`, value)
-        }
+        value={gender}
+        onValueChange={(value) => {
+          setValue(`teamMembers.${index}.gender`, value);
+          setGender(value);
+        }}
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="男" id={`male-${index}`} />
@@ -83,8 +105,11 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
 
       {/* Radio Group for Grade */}
       <RadioGroup
-        defaultValue="一"
-        onValueChange={(value) => setValue(`teamMembers.${index}.grade`, value)}
+        value={grade}
+        onValueChange={(value) => {
+          setValue(`teamMembers.${index}.grade`, value);
+          setGrade(value);
+        }}
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="一" id={`grade-one-${index}`} />
@@ -167,6 +192,42 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
         </p>
       )}
 
+      {/* T-Shirt Size Radio Group */}
+      <div className="space-y-2">
+        <h4 className="font-semibold">
+          T-Shirt 尺碼
+          <a
+            href="https://www.artshirt.com.tw/style-detail/1203/"
+            className="text-blue-500 hover:underline ml-2"
+            target="_blank"
+          >
+            點我前往看尺寸表
+          </a>
+        </h4>
+        <RadioGroup
+          value={tShirtSize} // 使用狀態來更新顯示
+          onValueChange={(value) => {
+            setValue(`teamMembers.${index}.tShirtSize`, value);
+            setTShirtSize(value); // 同步更新狀態
+          }}
+        >
+          {["S", "M", "L", "XL", "2L", "3L", "4L"].map((size) => (
+            <div className="flex items-center space-x-2" key={size}>
+              <RadioGroupItem
+                value={size}
+                id={`tshirt-${size.toLowerCase()}-${index}`}
+              />
+              <Label htmlFor={`tshirt-${size.toLowerCase()}-${index}`}>
+                {size}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+        {errors?.teamMembers?.[index]?.tShirtSize && (
+          <p className="text-red-600">T-shirt 尺碼必填</p>
+        )}
+      </div>
+
       {/* Additional fields */}
       <Input
         {...register(`teamMembers.${index}.allergies`)}
@@ -183,7 +244,7 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
 
       {/* Emergency Contacts */}
       <div className="space-y-2">
-        <h4 className="font-semibold">緊急聯絡人</h4>
+        <h4 className="font-semibold">緊急聯絡人(第一位爲監護人)</h4>
         {emergencyContacts.map((contact, contactIndex) => (
           <div key={contactIndex} className="space-y-2">
             <Label>{`緊急聯絡人 ${contactIndex + 1}`}</Label>
@@ -283,11 +344,8 @@ const TeamMemberForm: FC<{ index: number }> = ({ index }) => {
   );
 };
 
-const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({
-  onNext,
-  onPrev,
-}) => {
-  const { control, watch, handleSubmit } = useFormContext();
+const TeamMembersPage = ({ onNext, onPrev }) => {
+  const { control, watch, handleSubmit, getValues } = useFormContext();
   const { fields, append } = useFieldArray({
     control,
     name: "teamMembers",
@@ -297,21 +355,22 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({
 
   // 自動添加成員
   useEffect(() => {
+    const currentTeamSize = watch("teamSize");
     if (isInitialRender.current) {
       isInitialRender.current = false;
       return;
     }
 
-    if (!isNaN(teamSize)) {
-      const diff = teamSize - fields.length;
+    if (!isNaN(currentTeamSize)) {
+      const diff = currentTeamSize - fields.length;
       if (diff > 0) {
         for (let i = 0; i < diff; i++) {
           append({
-            isRepresentative: false,
             name: "",
-            gender: "男",
+            gender: "",
             school: "",
-            grade: "一",
+            tShirtSize: "",
+            grade: "",
             identityNumber: "",
             birthday: "",
             email: "",
@@ -324,15 +383,15 @@ const TeamMembersPage: FC<{ onNext: () => void; onPrev: () => void }> = ({
         }
       }
     }
-  }, [teamSize, fields.length, append]);
+  }, [watch("teamSize"), fields.length, append]);
 
   // 提交處理邏輯
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data) => {
     console.log(data); // 這裡會輸出表單的數據
     onNext(); // 驗證通過後進行下一步
   };
 
-  const onSubmitUp = (data: FormData) => {
+  const onSubmitUp = (data) => {
     console.log(data); // 這裡會輸出表單的數據
     onPrev(); // 驗證通過後進行下一步
   };

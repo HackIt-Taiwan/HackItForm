@@ -1,16 +1,15 @@
-import { FC } from "react";
-import { useFormContext } from "react-hook-form"; // 用於獲取表單上下文
-import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from "@/components/ui/select"; // 引入 Shadcn 的 Select 元件
-import { Button } from "@/components/ui/button"; // 引入 Shadcn 的 Button 元件
-import { Input } from "@/components/ui/input"; // 引入 Shadcn 的 Input 元件
+import { useFormContext } from "react-hook-form";
+import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-const TeamSizePage: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext, onPrev }) => {
-  const { register, setValue, watch, formState: { errors } } = useFormContext(); // 獲取表單控制方法和錯誤狀態
+const TeamSizePageForUpdate = ({ onNext, onPrev }) => {
+  const { register, setValue, watch, formState: { errors } } = useFormContext();
   const teamSize = watch("teamSize");
   const teamName = watch("teamName");
 
-  const handleTeamSizeChange = (value: string) => {
-    setValue("teamSize", value); // 將選擇的團隊人數設置到表單中
+  const handleTeamSizeChange = (value) => {
+    setValue("teamSize", value);
   };
 
   const handleNext = () => {
@@ -25,9 +24,10 @@ const TeamSizePage: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext,
       
       {/* 團隊人數選擇 */}
       <Select
-        {...register("teamSize", { required: "請選擇參賽團隊人數" })} // 註冊到 react-hook-form
-        onValueChange={handleTeamSizeChange} // 當選擇時更新表單
+        {...register("teamSize", { required: "請選擇參賽團隊人數" })}
+        onValueChange={handleTeamSizeChange}
         defaultValue={teamSize}
+        disabled={true}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="團隊人數" />
@@ -49,7 +49,7 @@ const TeamSizePage: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext,
           {...register("teamName", { 
             required: "請輸入團隊名稱", 
             minLength: { value: 3, message: "團隊名稱至少需要 3 個字元" },
-          })} // 增加團隊名稱的限制
+          })}
           placeholder="團隊名稱"
         />
         {errors.teamName && <p className="text-red-600">{errors.teamName.message}</p>}
@@ -63,4 +63,4 @@ const TeamSizePage: FC<{ onNext: () => void; onPrev: () => void; }> = ({ onNext,
   );
 };
 
-export default TeamSizePage;
+export default TeamSizePageForUpdate;
