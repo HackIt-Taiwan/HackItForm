@@ -15,6 +15,7 @@ const TeamSizePage = ({ onNext, onPrev }) => {
   const handleNext = () => {
     if (teamSize && teamName) {
       onNext();
+      window.scrollTo(0, 0); 
     }
   };
 
