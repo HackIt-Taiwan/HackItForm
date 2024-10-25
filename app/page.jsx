@@ -51,6 +51,12 @@ const teamMemberSchema = z.object({
   specialDiseases: z.string().optional(),
   remarks: z.string().optional(),
   tShirtSize: z.enum(["S", "M", "L", "XL", "2L", "3L", "4L"]),
+  studentCardFront: z
+    .instanceof(File)
+    .refine((file) => file.size < 10000000, "學生證正面大小必須小於 10MB"), // 檔案大小限制
+  studentCardBack: z
+    .instanceof(File)
+    .refine((file) => file.size < 10000000, "學生證背面大小必須小於 10MB"), // 檔案大小限制
 });
 
 const exhibitorSchema = z.object({
@@ -98,20 +104,63 @@ const StepForm = () => {
     setLoading(true);
     setSubmitSuccess(false);
     setSubmitError(false);
-
+  
+    // 创建一个新的数据对象来存储 Base64 编码的文件
+    const base64Data = { ...data };
+  
+    // 使用 Promise.all 来等待所有文件读取完成
+    const readImageAsBase64 = async (file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result); // 返回 Base64 字符串
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+  
+    // 存储所有的文件读取 Promise
+    const fileReaders = [];
+  
+    // 遍历每个团队成员
+    for (let i = 0; i < base64Data.teamMembers.length; i++) {
+      const member = base64Data.teamMembers[i];
+  
+      if (member.studentCardFront instanceof File) {
+        fileReaders.push(
+          readImageAsBase64(member.studentCardFront).then((base64) => {
+            // 将 Base64 字符串添加到团队成员对象中
+            base64Data.teamMembers[i].studentCardFront = base64;
+          })
+        );
+      }
+  
+      if (member.studentCardBack instanceof File) {
+        fileReaders.push(
+          readImageAsBase64(member.studentCardBack).then((base64) => {
+            // 将 Base64 字符串添加到团队成员对象中
+            base64Data.teamMembers[i].studentCardBack = base64;
+          })
+        );
+      }
+    }
+  
     try {
+      // 等待所有文件读取完成
+      await Promise.all(fileReaders);
+  
       const response = await fetch(API_END_POINT + "users/team/create", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json", // 将请求内容类型设置为 JSON
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(base64Data), // 将包含 Base64 数据的对象作为请求主体
       });
-
+  
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-
+  
       const responseData = await response.json();
       console.log("成功提交數據:", responseData);
       setSubmitSuccess(true);
@@ -147,7 +196,7 @@ const StepForm = () => {
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-4">恭喜你完成表單的填寫，請點選下面的按鈕進行發送</h2>
               {/* 僅在提交成功或錯誤時隱藏按鈕 */}
-              {!submitSuccess && !submitError && (
+              {!submitSuccess && (
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? <ClipLoader size={20} color="#fff" /> : "提交表單"}
                 </Button>

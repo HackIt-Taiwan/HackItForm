@@ -37,6 +37,14 @@ const TeamMemberForm = ({ index }) => {
     getValues(`teamMembers.${index}.gender`)
   );
 
+  const handleImageUpload = (event, type) => {
+    const file = event.target.files[0];
+    if (file) {
+      // 直接将文件对象设置到表单状态中
+      setValue(`teamMembers.${index}.${type}`, file);
+    }
+  };
+
   useEffect(() => {
     setTShirtSize(getValues(`teamMembers.${index}.tShirtSize`));
   }, [getValues(`teamMembers.${index}.tShirtSize`)]);
@@ -230,6 +238,35 @@ const TeamMemberForm = ({ index }) => {
           <p className="text-red-600">T-shirt 尺碼必填</p>
         )}
       </div>
+
+      {/* 图像上传 */}
+      <div>
+        <Label htmlFor={`image-${index}`}>請上傳學生證正面</Label>
+        <Input
+          type="file"
+          id={`image-${index}`}
+          accept="image/*"
+          onChange={(event) => handleImageUpload(event, "studentCardFront")}
+        />
+      </div>
+      {errors?.teamMembers?.[index]?.studentCardFront && (
+        <p className="text-red-600">{errors.teamMembers[index].studentCardFront.message}</p>
+      )}
+
+
+      {/* 图像上传 */}
+      <div>
+        <Label htmlFor={`image-${index}`}>請上傳學生證背面</Label>
+        <Input
+          type="file"
+          id={`image-${index}`}
+          accept="image/*"
+          onChange={(event) => handleImageUpload(event, "studentCardBack")}
+        />
+      </div>
+      {errors?.teamMembers?.[index]?.studentCardBack && (
+        <p className="text-red-600">{errors.teamMembers[index].studentCardBack.message}</p>
+      )}
 
       {/* Additional fields */}
       <Input
