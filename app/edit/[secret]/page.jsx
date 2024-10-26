@@ -15,7 +15,7 @@ import { useParams } from "next/navigation"; // 使用 useRouter 來取得 [id]
 import { ClipLoader } from "react-spinners"; // 引入 react-spinners
 
 // Zod schema 定義
- const emergencyContactSchema = z.object({
+const emergencyContactSchema = z.object({
   name: z.string().min(1, "緊急聯絡人姓名必填"),
   relationship: z.string().min(1, "關係必填"),
   phone: z
@@ -24,7 +24,7 @@ import { ClipLoader } from "react-spinners"; // 引入 react-spinners
     .refine((val) => val.startsWith("09"), "電話號碼必須以 09 開頭"),
 });
 
- const accompanyingPersonSchema = z.object({
+const accompanyingPersonSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "姓名必填"),
   email: z.string().email("Email 格式不正確"),
@@ -34,7 +34,7 @@ import { ClipLoader } from "react-spinners"; // 引入 react-spinners
     .refine((val) => val.startsWith("09"), "電話號碼必須以 09 開頭"),
 });
 
- const teamMemberSchema = z.object({
+const teamMemberSchema = z.object({
   name: z.string().min(1, "姓名必填"),
   gender: z.enum(["男", "女", "其他"]),
   school: z.string().min(1, "學校必填"),
@@ -53,15 +53,21 @@ import { ClipLoader } from "react-spinners"; // 引入 react-spinners
   specialDiseases: z.string().optional(),
   remarks: z.string().optional(),
   tShirtSize: z.enum(["S", "M", "L", "XL", "2L", "3L", "4L"]),
+  studentCardFront: z
+    .instanceof(File)
+    .refine((file) => file.size < 10000000, "學生證正面大小必須小於 10MB"), // 檔案大小限制
+  studentCardBack: z
+    .instanceof(File)
+    .refine((file) => file.size < 10000000, "學生證背面大小必須小於 10MB"), // 檔案大小限制
 });
 
- const exhibitorSchema = z.object({
+const exhibitorSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "姓名必填"),
   email: z.string().min(1, "Email 必填").email("Email 格式不正確"), // 確保 email 格式正確
 });
 
- const formSchema = z.object({
+const formSchema = z.object({
   teamName: z
     .string()
     .min(2, "團隊名稱至少 2 個字")
@@ -108,11 +114,16 @@ const StepForm = () => {
             setNotFound(true);
             return;
           }
-
+  
           const data = await response.json();
-          // 根據取得的資料更新表單的預設值
-          methods.reset(data);
-          methods.setValue("teamSize", String(data.teamMembers.length)); // 將選擇的團隊人數設置到表單中
+
+
+          // 將處理過的資料設置到表單
+          methods.reset({
+            ...data,
+          });
+  
+          methods.setValue("teamSize", String(data.teamMembers.length));
           if (!data.accompanyingPersons) {
             methods.setValue("accompanyingPersons", []);
           }
@@ -129,7 +140,7 @@ const StepForm = () => {
         setLoading(false);
       }
     };
-
+  
     fetchFormData();
   }, [params.secret, methods]);
 
@@ -142,36 +153,78 @@ const StepForm = () => {
   };
 
   const onSubmit = async (data) => {
-    setLoading(true); // 開始loading
-    setSubmitSuccess(false); // 清除之前的成功提示
-    setSubmitError(false); // 清除之前的錯誤提示
-    setShowButtons(false); // 提交後隱藏按鈕
-
+    setLoading(true);
+    setSubmitSuccess(false);
+    setSubmitError(false);
+  
+    // 创建一个新的数据对象来存储 Base64 编码的文件
+    const base64Data = { ...data };
+  
+    // 使用 Promise.all 来等待所有文件读取完成
+    const readImageAsBase64 = async (file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result); // 返回 Base64 字符串
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+  
+    // 存储所有的文件读取 Promise
+    const fileReaders = [];
+  
+    // 遍历每个团队成员
+    for (let i = 0; i < base64Data.teamMembers.length; i++) {
+      const member = base64Data.teamMembers[i];
+      if (member.studentCardFront instanceof File) {
+        fileReaders.push(
+          readImageAsBase64(member.studentCardFront).then((base64) => {
+            base64Data.teamMembers[i].studentCardFront = base64;
+          })
+        );
+      } else if (typeof member.studentCardFront === "string" && member.studentCardFront.startsWith("data:image")) {
+        // 如果已經是 Base64 字符串，直接使用
+        base64Data.teamMembers[i].studentCardFront = member.studentCardFront;
+      }
+    
+      // 如果 studentCardBack 是 File，才進行轉換
+      if (member.studentCardBack instanceof File) {
+        fileReaders.push(
+          readImageAsBase64(member.studentCardBack).then((base64) => {
+            base64Data.teamMembers[i].studentCardBack = base64;
+          })
+        );
+      } else if (typeof member.studentCardBack === "string" && member.studentCardBack.startsWith("data:image")) {
+        // 如果已經是 Base64 字符串，直接使用
+        base64Data.teamMembers[i].studentCardBack = member.studentCardBack;
+      }
+    }
+  
     try {
-      const response = await fetch(
-        API_END_POINT + `users/team/update/${params.secret}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
+      // 等待所有文件读取完成
+      await Promise.all(fileReaders);
+  
+      const response = await fetch(API_END_POINT + "users/team/update/" + params.secret, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // 将请求内容类型设置为 JSON
+        },
+        body: JSON.stringify(base64Data), // 将包含 Base64 数据的对象作为请求主体
+      });
+  
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-
+  
       const responseData = await response.json();
       console.log("成功提交數據:", responseData);
-      setSubmitSuccess(true); // 提交成功，顯示成功消息
+      setSubmitSuccess(true);
     } catch (error) {
       console.error("提交失敗:", error);
-      setSubmitError(true); // 出現錯誤，顯示錯誤消息
-      setShowButtons(true); // 如果出現錯誤，顯示按鈕
+      setSubmitError(true);
     } finally {
-      setLoading(false); // 結束loading
+      setLoading(false);
     }
   };
 
